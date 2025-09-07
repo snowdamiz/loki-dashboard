@@ -231,16 +231,16 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative overflow-hidden bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {statusFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Wallet Balance</CardTitle>
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <Wallet className="h-4 w-4 text-purple-400" />
+              <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                <Wallet className="h-4 w-4 text-purple-500" />
               </div>
             </CardHeader>
             <CardContent>
@@ -254,16 +254,16 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative overflow-hidden bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {statusFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Total Trades</CardTitle>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Activity className="h-4 w-4 text-blue-400" />
+              <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                <Activity className="h-4 w-4 text-purple-500" />
               </div>
             </CardHeader>
             <CardContent>
@@ -283,20 +283,20 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative overflow-hidden bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {metricsFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Net Profit</CardTitle>
-              <div className={`p-2 rounded-lg ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                <DollarSign className={`h-4 w-4 ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`} />
+              <div className={`p-2 rounded-lg border ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'bg-gray-800/50 border-green-500/30' : 'bg-gray-800/50 border-red-500/30'}`}>
+                <DollarSign className={`h-4 w-4 ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`text-3xl font-bold ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`text-3xl font-bold ${(metrics?.analysis?.netProfit || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {formatCurrency(metrics?.analysis?.netProfit || 0)}
               </div>
               <div className="flex items-center justify-between mt-2">
@@ -310,16 +310,16 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative overflow-hidden bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {positionsFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Open Positions</CardTitle>
-              <div className="p-2 bg-orange-500/10 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-orange-400" />
+              <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                <TrendingUp className="h-4 w-4 text-purple-500" />
               </div>
             </CardHeader>
             <CardContent>
@@ -340,10 +340,10 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
 
         {/* Chart */}
         {formattedChartData.length > 0 && (
-          <Card className="relative overflow-hidden bg-gray-900 border-gray-800">
+          <Card className="relative overflow-hidden bg-gray-950/50 border-gray-800">
             {chartFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader className="pb-4">
@@ -422,10 +422,10 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Open Positions */}
-          <Card className="relative bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {positionsFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader>
@@ -435,8 +435,8 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
                   <CardDescription className="text-gray-500">Currently held tokens</CardDescription>
                 </div>
                 {positions && positions.length > 0 && (
-                  <div className="px-2 py-1 bg-orange-500/10 rounded-full border border-orange-500/20">
-                    <span className="text-xs font-medium text-orange-400">{positions.length} active</span>
+                  <div className="px-2 py-1 bg-purple-500/10 rounded-full border border-purple-500/20">
+                    <span className="text-xs font-medium text-purple-400">{positions.length} active</span>
                   </div>
                 )}
               </div>
@@ -488,10 +488,10 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
           </Card>
 
           {/* Recent Trades */}
-          <Card className="relative bg-gray-900 border-gray-800 hover:border-gray-700 transition-all duration-300">
+          <Card className="relative bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-all duration-300">
             {tradesFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
               </div>
             )}
             <CardHeader>
@@ -501,8 +501,8 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
                   <CardDescription className="text-gray-500">Latest trading activity</CardDescription>
                 </div>
                 {trades?.trades && trades.trades.length > 0 && (
-                  <div className="px-2 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">
-                    <span className="text-xs font-medium text-blue-400">{trades.total} total</span>
+                  <div className="px-2 py-1 bg-purple-500/10 rounded-full border border-purple-500/20">
+                    <span className="text-xs font-medium text-purple-400">{trades.total} total</span>
                   </div>
                 )}
               </div>

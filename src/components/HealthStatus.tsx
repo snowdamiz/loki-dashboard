@@ -51,13 +51,13 @@ const getStatusColor = (status: string) => {
 
 const getServiceIcon = (serviceName: string) => {
   const name = serviceName.toLowerCase()
-  if (name.includes('websocket')) return <Wifi className="h-5 w-5" />
-  if (name.includes('database')) return <Database className="h-5 w-5" />
-  if (name.includes('solana') || name.includes('rpc')) return <Globe className="h-5 w-5" />
-  if (name.includes('jupiter')) return <Zap className="h-5 w-5" />
-  if (name.includes('dex')) return <Activity className="h-5 w-5" />
-  if (name.includes('monitor')) return <Monitor className="h-5 w-5" />
-  return <Globe className="h-5 w-5" />
+  if (name.includes('websocket')) return <Wifi className="h-5 w-5 text-purple-500" />
+  if (name.includes('database')) return <Database className="h-5 w-5 text-purple-500" />
+  if (name.includes('solana') || name.includes('rpc')) return <Globe className="h-5 w-5 text-purple-500" />
+  if (name.includes('jupiter')) return <Zap className="h-5 w-5 text-purple-500" />
+  if (name.includes('dex')) return <Activity className="h-5 w-5 text-purple-500" />
+  if (name.includes('monitor')) return <Monitor className="h-5 w-5 text-purple-500" />
+  return <Globe className="h-5 w-5 text-purple-500" />
 }
 
 const formatUptime = (seconds: number) => {
@@ -79,16 +79,16 @@ const ServiceCard: React.FC<{ service: ServiceHealth; serviceName: string; isFet
   const statusColor = getStatusColor(service.status)
   
   return (
-    <Card className="relative bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-colors">
+    <Card className="relative bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-colors">
       {isFetching && (
         <div className="absolute top-2 right-2 z-10">
-          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping"></div>
+        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
         </div>
       )}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
+            <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
               {getServiceIcon(serviceName)}
             </div>
             <div>
@@ -188,17 +188,17 @@ export default function HealthStatus({ health, isLoading, isFetching }: HealthSt
   return (
     <div className="space-y-6">
       {/* Overall Health Status */}
-      <Card className="relative bg-gray-900/50 border-gray-800">
+      <Card className="relative bg-gray-950/50 border-gray-800">
         {isFetching && !isLoading && (
           <div className="absolute top-4 right-4 z-10">
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
           </div>
         )}
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                <Activity className="h-6 w-6 text-purple-400" />
+              <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                <Activity className="h-6 w-6 text-purple-500" />
               </div>
               <div>
                 <CardTitle>System Health</CardTitle>
