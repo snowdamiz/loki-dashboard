@@ -14,40 +14,59 @@ const api = axios.create({
 export interface BotStatus {
   bot: {
     running: boolean
-    connected?: boolean
+    connected: boolean
     paused: boolean
-    isPaused?: boolean  // Keep for backward compatibility
-    emergencyStop: boolean
-    trackedWallet?: string
-    mode?: string
+    mode: string
+    trackedWallet: string
+    totalTrades: number
+    totalProfitLoss: number
+    openPositions: number
+    errors: number
+    startTime: number
+    lastTradeTime: number
   }
   statistics: {
-    totalTrades: number
-    successfulTrades: number
-    failedTrades: number
-    totalProfit: number
-    totalLoss: number
+    totalProcessed: number
+    successful: number
+    failed: number
+    skipped: number
+    winRate: number
+    queueSize: number
+    isProcessing: boolean
   }
   wallet: {
     address: string
     balance: number
   }
-  safety: any
-  exitStrategy: any
+  safety: {
+    dailyTrades: number
+    dailyLoss: number
+    consecutiveLosses: number
+    positionCount: number
+    totalExposure: number
+    isEmergencyStopped: boolean
+  }
+  exitStrategy: {
+    monitoredPositions: number
+    activeAlerts: any[]
+  }
 }
 
 export interface Trade {
   id: number
   timestamp: number
+  created_at: number
   token_address: string
-  token_symbol?: string
-  side: 'BUY' | 'SELL'
-  amount: number
+  action: 'BUY' | 'SELL'
+  amount_sol: number
   price: number
-  sol_amount: number
-  profit_loss?: number
+  token_amount: number
   status: string
-  error?: string
+  tx_signature: string
+  reason: string | null
+  gas_cost: number | null
+  risk_score: number | null
+  slippage: number | null
 }
 
 export interface Position {
@@ -55,12 +74,22 @@ export interface Position {
   token_symbol?: string
   amount: number
   entry_price: number
-  current_price?: number
-  currentValue?: number
-  entryValue?: number
-  profitLoss?: number
-  profitLossPercent?: number
+  current_price: number
+  currentPrice?: number  // For backward compatibility
+  currentValue: number
+  entryValue: number
+  profitLoss: number
+  profitLossPercent: number
+  profit_loss?: number
+  cost_basis: number
+  status: 'OPEN' | 'CLOSED'
   timestamp: number
+  updated_at?: number
+  last_updated?: number
+  exit_price?: number
+  exit_timestamp?: number
+  hasPriceUpdate?: boolean
+  trade_count?: number
 }
 
 export interface Metrics {
@@ -116,6 +145,49 @@ export interface DetailedHealth {
   metrics: HealthMetrics
 }
 
+export interface WalletSignal {
+  timestamp: number
+  time: string
+  action: 'BUY' | 'SELL'
+  signature: string
+  fullSignature: string
+  tokenIn: {
+    address: string
+    amount: number
+    symbol: string
+  }
+  tokenOut: {
+    address: string
+    amount: number
+    symbol: string
+  }
+  dex: string
+  pool?: string
+}
+
+export interface WalletSignalsResponse {
+  count: number
+  signals: WalletSignal[]
+  trackedWallet: string
+}
+
+export interface VolumeInfo {
+  flyApp: string
+  volumePath: string
+  volume: {
+    totalBytes: number
+    totalGB: string
+    usedBytes: number
+    usedGB: string
+    availableBytes: number
+    availableGB: string
+    usagePercent: string
+    databaseSize: number
+    databaseSizeMB: string
+  }
+  timestamp: string
+}
+
 // API Functions
 export const lokiApi = {
   // Health & Status
@@ -148,6 +220,7 @@ export const lokiApi = {
   // Wallet
   getWalletBalance: () => api.get('/wallet/balance'),
   getTrackedWallet: () => api.get('/wallet/tracked'),
+  getWalletSignals: () => api.get<WalletSignalsResponse>('/wallet/signals'),
 
   // Tokens
   getTokenInfo: (address: string) => api.get(`/tokens/${address}`),
@@ -158,6 +231,9 @@ export const lokiApi = {
   resetCircuitBreaker: () => api.post('/circuit-breaker/reset'),
   tripCircuitBreaker: (reason: string) => 
     api.post('/circuit-breaker/trip', { reason }),
+
+  // System
+  getVolumeInfo: () => api.get<VolumeInfo>('/system/volume'),
 }
 
 export default lokiApi

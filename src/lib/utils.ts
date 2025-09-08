@@ -19,6 +19,10 @@ export function formatCurrency(num: number): string {
   }).format(num)
 }
 
+export function formatSOL(num: number, decimals = 4): string {
+  return `${formatNumber(num, decimals)} SOL`
+}
+
 export function formatPercent(num: number): string {
   return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`
 }

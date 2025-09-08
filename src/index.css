@@ -57,3 +57,47 @@
       sans-serif;
   }
 }
+
+/* Custom Scrollbar Styles */
+@layer utilities {
+  /* For Webkit browsers */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: rgba(31, 41, 55, 0.8);
+    border-radius: 5px;
+    margin: 4px 0;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.6);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.8);
+    background-clip: content-box;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-thumb:active {
+    background: rgba(168, 85, 247, 0.9);
+    background-clip: content-box;
+  }
+  
+  /* Firefox */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 114, 128, 0.6) rgba(31, 41, 55, 0.8);
+  }
+  
+  /* Ensure scroll container has proper z-index */
+  .scrollbar-custom {
+    position: relative;
+    z-index: 1;
+  }
+}

@@ -39,13 +39,13 @@ const getStatusIcon = (status: string) => {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'healthy':
-      return 'text-green-500 bg-green-500/10 border-green-500/20'
+      return 'text-green-400 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30'
     case 'unhealthy':
-      return 'text-red-500 bg-red-500/10 border-red-500/20'
+      return 'text-red-400 bg-gradient-to-br from-red-500/10 to-pink-500/10 border-red-500/30'
     case 'degraded':
-      return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+      return 'text-yellow-400 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
     default:
-      return 'text-gray-500 bg-gray-500/10 border-gray-500/20'
+      return 'text-gray-400 bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/30'
   }
 }
 
@@ -79,20 +79,21 @@ const ServiceCard: React.FC<{ service: ServiceHealth; serviceName: string; isFet
   const statusColor = getStatusColor(service.status)
   
   return (
-    <Card className="relative bg-gray-950/50 border-gray-800 hover:border-gray-700 transition-colors">
+    <Card className="relative glass-effect border-gray-800/50 animated-border card-hover-lift group">
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
       {isFetching && (
         <div className="absolute top-2 right-2 z-10">
-        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
+          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
         </div>
       )}
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+            <div className="p-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
               {getServiceIcon(serviceName)}
             </div>
             <div>
-              <CardTitle className="text-sm font-medium">{service.name}</CardTitle>
+              <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">{service.name}</CardTitle>
               {service.latency !== undefined && service.latency > 0 && (
                 <p className="text-xs text-gray-500 mt-1">
                   <Clock className="inline h-3 w-3 mr-1" />
@@ -188,21 +189,22 @@ export default function HealthStatus({ health, isLoading, isFetching }: HealthSt
   return (
     <div className="space-y-6">
       {/* Overall Health Status */}
-      <Card className="relative bg-gray-950/50 border-gray-800">
+      <Card className="relative glass-effect border-gray-800/50 animated-border card-hover-lift">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
         {isFetching && !isLoading && (
           <div className="absolute top-4 right-4 z-10">
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
           </div>
         )}
-        <CardHeader>
+        <CardHeader className="relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
-                <Activity className="h-6 w-6 text-purple-500" />
+              <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
+                <Activity className="h-6 w-6 text-purple-400" />
               </div>
               <div>
-                <CardTitle>System Health</CardTitle>
-                <CardDescription>Overall system status and metrics</CardDescription>
+                <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">System Health</CardTitle>
+                <CardDescription className="text-gray-500 text-xs">Overall system status and metrics</CardDescription>
               </div>
             </div>
             <div className={`px-3 py-2 rounded-full flex items-center space-x-2 border ${overallStatusColor}`}>
@@ -211,44 +213,44 @@ export default function HealthStatus({ health, isLoading, isFetching }: HealthSt
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span className="text-xs text-gray-500">Uptime</span>
+            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
+              <div className="flex items-center space-x-2 mb-1">
+                <Clock className="h-3 w-3 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Uptime</span>
               </div>
-              <p className="text-lg font-semibold text-white mt-1">
+              <p className="text-lg font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
                 {formatUptime(health.uptime)}
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <HardDrive className="h-4 w-4 text-gray-500" />
-                <span className="text-xs text-gray-500">Memory</span>
+            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
+              <div className="flex items-center space-x-2 mb-1">
+                <HardDrive className="h-3 w-3 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Memory</span>
               </div>
-              <p className="text-lg font-semibold text-white mt-1">
+              <p className="text-lg font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
                 {formatBytes(health.metrics.memoryUsage.heapUsed)}
               </p>
               <p className="text-xs text-gray-500">
                 {health.metrics.memoryUsage.percentage.toFixed(1)}% used
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <Cpu className="h-4 w-4 text-gray-500" />
-                <span className="text-xs text-gray-500">CPU User</span>
+            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
+              <div className="flex items-center space-x-2 mb-1">
+                <Cpu className="h-3 w-3 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">CPU User</span>
               </div>
-              <p className="text-lg font-semibold text-white mt-1">
+              <p className="text-lg font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
                 {(health.metrics.cpuUsage.user / 1000).toFixed(1)}s
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <Cpu className="h-4 w-4 text-gray-500" />
-                <span className="text-xs text-gray-500">CPU System</span>
+            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
+              <div className="flex items-center space-x-2 mb-1">
+                <Cpu className="h-3 w-3 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">CPU System</span>
               </div>
-              <p className="text-lg font-semibold text-white mt-1">
+              <p className="text-lg font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
                 {(health.metrics.cpuUsage.system / 1000).toFixed(1)}s
               </p>
             </div>
@@ -258,7 +260,7 @@ export default function HealthStatus({ health, isLoading, isFetching }: HealthSt
 
       {/* Service Status Grid */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Service Status</h3>
+        <h3 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-4">Service Status</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(health.services).map(([key, service]) => 
             service ? (
