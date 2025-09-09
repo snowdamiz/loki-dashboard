@@ -15,7 +15,9 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
-  HardDrive
+  HardDrive,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
@@ -33,6 +35,7 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   // Queries with staleTime to prevent unnecessary refetches
   const { data: status = {} as any, isLoading: statusLoading, isFetching: statusFetching, isSuccess: statusSuccess } = useQuery({
@@ -139,6 +142,23 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
   })
 
+  const clearDatabaseMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('http://localhost:8080/database/clear-all?confirm=yes-clear-all-data', {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to clear database')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate all queries to refresh the data
+      queryClient.invalidateQueries()
+      setShowClearConfirm(false)
+    }
+  })
+
   // Format chart data
   const formattedChartData = React.useMemo(() => {
     if (!chartData || typeof chartData !== 'object') return []
@@ -176,6 +196,76 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Clear Database Confirmation Dialog */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="relative mx-4 w-full max-w-md rounded-xl border border-red-500/20 bg-gray-900/95 p-6 shadow-2xl">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-900/10 to-transparent opacity-50"></div>
+            <div className="relative">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                  <AlertTriangle className="h-6 w-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Clear Database?</h3>
+              </div>
+              <p className="text-sm text-gray-400 mb-6">
+                This action will permanently delete all data including:
+              </p>
+              <ul className="text-sm text-gray-500 space-y-1 mb-6 ml-4">
+                <li className="flex items-center space-x-2">
+                  <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <span>All trade history</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <span>All positions</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <span>All wallet signals</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <span>All metrics and statistics</span>
+                </li>
+              </ul>
+              <p className="text-xs text-red-400 font-semibold mb-6">
+                ⚠️ This action cannot be undone!
+              </p>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1 border-gray-600 hover:bg-gray-800"
+                  disabled={clearDatabaseMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => clearDatabaseMutation.mutate()}
+                  disabled={clearDatabaseMutation.isPending}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {clearDatabaseMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear All Data
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="glass-effect border-b border-gray-800/50 sticky top-0 z-50">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-pink-900/10"></div>
@@ -254,6 +344,16 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
               >
                 <StopCircle className="h-4 w-4 mr-2" />
                 Emergency Stop
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearConfirm(true)}
+                disabled={clearDatabaseMutation.isPending}
+                className="border-orange-600/50 hover:bg-orange-600/10 hover:text-orange-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear DB
               </Button>
               {onLogout && (
                 <>
@@ -340,6 +440,20 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
                 >
                   <StopCircle className="h-4 w-4 mr-2" />
                   Emergency Stop
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowClearConfirm(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  disabled={clearDatabaseMutation.isPending}
+                  className="w-full bg-orange-900/20 border-orange-600/50 hover:bg-orange-600/30 text-orange-400 hover:text-orange-300"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Database
                 </Button>
                 
                 {onLogout && (
