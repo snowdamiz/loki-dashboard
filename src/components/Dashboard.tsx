@@ -143,15 +143,7 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
   })
 
   const clearDatabaseMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('http://localhost:8080/database/clear-all?confirm=yes-clear-all-data', {
-        method: 'DELETE',
-      })
-      if (!response.ok) {
-        throw new Error('Failed to clear database')
-      }
-      return response.json()
-    },
+    mutationFn: lokiApi.clearDatabase,
     onSuccess: () => {
       // Invalidate all queries to refresh the data
       queryClient.invalidateQueries()
@@ -266,217 +258,250 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
           </div>
         </div>
       )}
-      {/* Header */}
-      <header className="glass-effect border-b border-gray-800/50 sticky top-0 z-50">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-pink-900/10"></div>
-        <div className="container mx-auto px-4 py-3 relative">
-          <div className="flex items-center justify-between">
-            {/* Logo and Status - Always visible */}
+      {/* Modern Redesigned Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/5">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo Section - Simplified */}
             <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-purple-500 blur-xl opacity-30 animate-pulse"></div>
-                <div className="relative p-2 sm:p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30 glow-border">
-                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-white neon-text">
+              <Activity className="h-5 w-5 text-purple-400" />
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                   LOKI
                 </h1>
-                <div className="flex items-center space-x-2">
-                  <div className={`relative w-2 h-2 rounded-full ${status?.bot?.running ? 'bg-green-400' : 'bg-red-400'}`}>
-                    {status?.bot?.running && (
-                      <div className="absolute inset-0 bg-green-400 rounded-full animate-ping"></div>
-                    )}
-                  </div>
-                  <span className="text-xs font-mono ${status?.bot?.running ? 'text-green-400' : 'text-red-400'} hidden sm:inline">
-                    {status?.bot?.running ? 'ONLINE' : 'OFFLINE'}
-                    {status?.bot?.paused && ' | PAUSED'}
-                  </span>
-                </div>
+                <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+                  status?.bot?.running 
+                    ? status?.bot?.paused 
+                      ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                      : 'bg-green-500/10 text-green-500 border border-green-500/20'
+                    : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                }`}>
+                  {status?.bot?.running ? (status?.bot?.paused ? 'PAUSED' : 'LIVE') : 'OFFLINE'}
+                </span>
               </div>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Controls - Redesigned */}
             <div className="hidden lg:flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
+              {/* Live Updates Toggle */}
+              <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                className="relative"
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  autoRefresh 
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                    : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-600'
+                }`}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 transition-transform duration-1000 ${autoRefresh ? 'animate-spin' : ''}`} />
-                {autoRefresh ? 'Live' : 'Paused'}
-                {autoRefresh && (
-                  <span className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                )}
-              </Button>
-              <div className="h-8 w-px bg-border" />
-              {status?.bot?.paused ? (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => resumeMutation.mutate()}
-                  disabled={resumeMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Resume Trading
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => pauseMutation.mutate()}
-                  disabled={pauseMutation.isPending}
-                  className="border-yellow-600/50 hover:bg-yellow-600/10 hover:text-yellow-600"
-                >
-                  <Pause className="h-4 w-4 mr-2" />
-                  Pause
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => emergencyStopMutation.mutate()}
-                disabled={emergencyStopMutation.isPending}
-                className="border-red-600/50 hover:bg-red-600/10 hover:text-red-600"
-              >
-                <StopCircle className="h-4 w-4 mr-2" />
-                Emergency Stop
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowClearConfirm(true)}
-                disabled={clearDatabaseMutation.isPending}
-                className="border-orange-600/50 hover:bg-orange-600/10 hover:text-orange-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear DB
-              </Button>
-              {onLogout && (
-                <>
-                  <div className="h-8 w-px bg-border" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onLogout}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </>
-              )}
-            </div>
+                <div className="flex items-center space-x-1.5">
+                  {autoRefresh && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                  )}
+                  <RefreshCw className={`h-3.5 w-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
+                  <span>{autoRefresh ? 'Live' : 'Paused'}</span>
+                </div>
+              </button>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden absolute top-full left-0 right-0 border-t border-gray-800/50 shadow-2xl" style={{ background: 'rgb(17, 17, 17)', backdropFilter: 'blur(10px)' }}>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-pink-900/10"></div>
-                <div className="relative p-4 space-y-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setAutoRefresh(!autoRefresh)}
-                  className="w-full justify-start bg-gray-900/50 hover:bg-gray-800/70 border border-gray-800"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin text-green-400' : 'text-gray-400'}`} />
-                  <span className={autoRefresh ? 'text-green-400' : 'text-gray-400'}>
-                    {autoRefresh ? 'Live Updates On' : 'Live Updates Off'}
-                  </span>
-                </Button>
-                
+              {/* Trading Controls Group */}
+              <div className="flex items-center bg-gray-900/50 rounded-lg p-1 border border-gray-800">
                 {status?.bot?.paused ? (
                   <Button
-                    variant="default"
                     size="sm"
-                    onClick={() => {
-                      resumeMutation.mutate()
-                      setMobileMenuOpen(false)
-                    }}
+                    onClick={() => resumeMutation.mutate()}
                     disabled={resumeMutation.isPending}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 h-auto rounded-md"
                   >
-                    <Play className="h-4 w-4 mr-2" />
-                    Resume Trading
+                    <Play className="h-3.5 w-3.5 mr-1.5" />
+                    Resume
                   </Button>
                 ) : (
                   <Button
-                    variant="outline"
                     size="sm"
-                    onClick={() => {
-                      pauseMutation.mutate()
-                      setMobileMenuOpen(false)
-                    }}
+                    onClick={() => pauseMutation.mutate()}
                     disabled={pauseMutation.isPending}
-                    className="w-full border-yellow-600/50 hover:bg-yellow-600/10 hover:text-yellow-600"
+                    className="bg-gray-800 hover:bg-yellow-600/20 text-yellow-500 hover:text-yellow-400 text-xs px-3 py-1.5 h-auto rounded-md border-0"
                   >
-                    <Pause className="h-4 w-4 mr-2" />
-                    Pause Trading
+                    <Pause className="h-3.5 w-3.5 mr-1.5" />
+                    Pause
                   </Button>
                 )}
-                
+                <div className="w-px h-6 bg-gray-700 mx-1" />
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={() => {
-                    emergencyStopMutation.mutate()
-                    setMobileMenuOpen(false)
-                  }}
+                  onClick={() => emergencyStopMutation.mutate()}
                   disabled={emergencyStopMutation.isPending}
-                  className="w-full bg-red-900/20 border-red-600/50 hover:bg-red-600/30 text-red-400 hover:text-red-300"
+                  className="bg-transparent hover:bg-red-600/20 text-red-500 hover:text-red-400 text-xs px-3 py-1.5 h-auto rounded-md border-0"
                 >
-                  <StopCircle className="h-4 w-4 mr-2" />
-                  Emergency Stop
+                  <StopCircle className="h-3.5 w-3.5 mr-1.5" />
+                  Stop
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowClearConfirm(true)
-                    setMobileMenuOpen(false)
-                  }}
-                  disabled={clearDatabaseMutation.isPending}
-                  className="w-full bg-orange-900/20 border-orange-600/50 hover:bg-orange-600/30 text-orange-400 hover:text-orange-300"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear Database
-                </Button>
-                
-                {onLogout && (
-                  <>
-                    <div className="h-px bg-gray-800 my-2"></div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        onLogout()
-                        setMobileMenuOpen(false)
-                      }}
-                      className="w-full justify-start bg-gray-900/50 hover:bg-gray-800/70 border border-gray-800 text-gray-300 hover:text-white"
+              </div>
+
+              {/* Actions Dropdown Menu */}
+              <div className="relative group">
+                <button className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-medium transition-all border border-gray-700">
+                  <Menu className="h-3.5 w-3.5" />
+                  <span>Actions</span>
+                </button>
+                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-900 border border-gray-800 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right scale-95 group-hover:scale-100">
+                  <div className="p-1">
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      disabled={clearDatabaseMutation.isPending}
+                      className="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-md hover:bg-orange-600/10 text-orange-400 hover:text-orange-300 transition-colors"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
-                  </>
-                )}
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Clear Database</span>
+                    </button>
+                    {onLogout && (
+                      <>
+                        <div className="h-px bg-gray-800 my-1" />
+                        <button
+                          onClick={onLogout}
+                          className="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <LogOut className="h-3.5 w-3.5" />
+                          <span>Logout</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Mobile Menu Button - Redesigned */}
+            <div className="lg:hidden flex items-center space-x-2">
+              {/* Mobile Live Indicator */}
+              {autoRefresh && (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+              )}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="relative p-2 rounded-lg bg-gray-900/50 border border-gray-800 text-gray-400 hover:text-white transition-all"
+              >
+                <div className="relative w-6 h-6">
+                  <span className={`absolute inset-0 flex items-center justify-center transition-all duration-200 ${mobileMenuOpen ? 'rotate-180 opacity-0' : 'rotate-0 opacity-100'}`}>
+                    <Menu className="h-5 w-5" />
+                  </span>
+                  <span className={`absolute inset-0 flex items-center justify-center transition-all duration-200 ${mobileMenuOpen ? 'rotate-0 opacity-100' : '-rotate-180 opacity-0'}`}>
+                    <X className="h-5 w-5" />
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu - Redesigned Slide Down */}
+        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="border-t border-gray-800/50 bg-black/60 backdrop-blur-xl">
+            <div className="container mx-auto px-4 py-4">
+              {/* Mobile Controls - Simplified Color Scheme */}
+              <div className="space-y-2">
+                {/* Live Updates Toggle */}
+                <button
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    autoRefresh 
+                      ? 'bg-gray-800 text-white border border-gray-700' 
+                      : 'bg-gray-900/50 text-gray-400 border border-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
+                    <span>Live Updates</span>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    autoRefresh 
+                      ? 'bg-green-500/20 text-green-400' 
+                      : 'bg-gray-800 text-gray-500'
+                  }`}>
+                    {autoRefresh ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* Trading Control */}
+                <div className="grid grid-cols-2 gap-2">
+                  {status?.bot?.paused ? (
+                    <Button
+                      onClick={() => {
+                        resumeMutation.mutate()
+                        setMobileMenuOpen(false)
+                      }}
+                      disabled={resumeMutation.isPending}
+                      className="col-span-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Resume Trading
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        pauseMutation.mutate()
+                        setMobileMenuOpen(false)
+                      }}
+                      disabled={pauseMutation.isPending}
+                      className="bg-gray-900/50 border-gray-700 hover:bg-gray-800 text-gray-300"
+                    >
+                      <Pause className="h-4 w-4 mr-2" />
+                      Pause
+                    </Button>
+                  )}
+                  {!status?.bot?.paused && (
+                    <Button
+                      onClick={() => {
+                        emergencyStopMutation.mutate()
+                        setMobileMenuOpen(false)
+                      }}
+                      disabled={emergencyStopMutation.isPending}
+                      className="bg-gray-900/50 border-gray-700 hover:bg-gray-800 text-gray-300"
+                    >
+                      <StopCircle className="h-4 w-4 mr-2" />
+                      Stop
+                    </Button>
+                  )}
+                </div>
+
+                {/* Danger Zone */}
+                <div className="pt-2 mt-2 border-t border-gray-800">
+                  <p className="text-xs text-gray-500 mb-2 px-1">Danger Zone</p>
+                  <button
+                    onClick={() => {
+                      setShowClearConfirm(true)
+                      setMobileMenuOpen(false)
+                    }}
+                    disabled={clearDatabaseMutation.isPending}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-700 hover:bg-gray-800 text-gray-300 transition-all"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">Clear Database</span>
+                  </button>
+                </div>
+
+                {/* Logout */}
+                {onLogout && (
+                  <button
+                    onClick={() => {
+                      onLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-800 hover:bg-gray-800 text-gray-400 hover:text-white transition-all"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="text-sm font-medium">Logout</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -484,24 +509,21 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
       <main className="container mx-auto px-4 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {statusFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Wallet Balance</CardTitle>
-              <div className="p-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Wallet Balance</CardTitle>
+              <div className="p-2 bg-gray-800/50 rounded-lg">
                 <Wallet className="h-4 w-4 text-purple-400" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                <span className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                  {formatNumber(status?.wallet?.balance || 0, 4)}
-                </span>
+                {formatNumber(status?.wallet?.balance || 0, 4)}
                 <span className="text-lg text-gray-500 ml-1">SOL</span>
               </div>
               <div className="flex items-center mt-2 space-x-1">
@@ -513,24 +535,21 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {statusFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Total Trades</CardTitle>
-              <div className="p-2 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Trades</CardTitle>
+              <div className="p-2 bg-gray-800/50 rounded-lg">
                 <Activity className="h-4 w-4 text-blue-400" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                <span className="bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                  {status?.bot?.totalTrades || 0}
-                </span>
+                {status?.bot?.totalTrades || 0}
               </div>
               <div className="flex items-center mt-2 space-x-2">
                 <div className="flex items-center space-x-1">
@@ -551,16 +570,15 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-            <div className={`absolute inset-0 bg-gradient-to-br ${(metrics?.analysis?.netProfit || status?.bot?.totalProfitLoss || 0) >= 0 ? 'from-green-900/5' : 'from-red-900/5'} to-transparent opacity-50`}></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {(metricsFetching || statusFetching) && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className={`text-xs font-semibold uppercase tracking-wider ${(metrics?.analysis?.netProfit || status?.bot?.totalProfitLoss || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>Net Profit</CardTitle>
-              <div className={`p-2 rounded-lg border ${(metrics?.analysis?.netProfit || status?.bot?.totalProfitLoss || 0) >= 0 ? 'bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20' : 'bg-gradient-to-br from-red-500/10 to-pink-500/10 border-red-500/20'}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Net Profit</CardTitle>
+              <div className="p-2 bg-gray-800/50 rounded-lg">
                 <DollarSign className={`h-4 w-4 ${(metrics?.analysis?.netProfit || status?.bot?.totalProfitLoss || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`} />
               </div>
             </CardHeader>
@@ -579,29 +597,26 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {positionsFetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Open Positions</CardTitle>
-              <div className="p-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Open Positions</CardTitle>
+              <div className="p-2 bg-gray-800/50 rounded-lg">
                 <TrendingUp className="h-4 w-4 text-purple-400" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                <span className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                  {positions?.length || 0}
-                </span>
+                {positions?.length || 0}
               </div>
               <div className="flex items-center mt-2 space-x-1">
                 <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
                 <p className="text-xs text-gray-500">
-                  Total value: <span className="font-medium text-purple-300">{formatSOL(
+                  Total value: <span className="font-medium text-gray-400">{formatSOL(
                     positions?.reduce((sum: number, p: any) => sum + (p.currentValue || 0), 0) || 0
                   )}</span>
                 </p>
@@ -615,79 +630,74 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
 
         {/* DB Volume Card */}
         {volumeInfo && (
-          <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {volumeFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="pb-4 relative">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl border border-indigo-500/30">
-                    <HardDrive className="h-6 w-6 text-indigo-400" />
+                  <div className="p-3 bg-gray-800/50 rounded-xl">
+                    <HardDrive className="h-6 w-6 text-gray-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Database Volume</CardTitle>
-                    <CardDescription className="text-gray-500 text-xs">Storage usage and capacity</CardDescription>
+                    <CardTitle className="text-lg font-semibold text-white mb-1">Database Volume</CardTitle>
+                    <CardDescription className="text-sm text-gray-500">Storage usage and capacity</CardDescription>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  <p className="text-2xl font-bold text-white">
                     {volumeInfo.volume.usagePercent}
                   </p>
                   <p className="text-xs text-gray-500">Used</p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="relative">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-indigo-500/30 transition-all">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className="w-1 h-1 bg-indigo-400 rounded-full"></div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider">Total</span>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-1.5 mb-1">
+                    <span className="text-xs text-gray-500">Total</span>
                   </div>
-                  <p className="text-lg font-bold bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
+                  <p className="text-base font-semibold text-white">
                     {volumeInfo.volume.totalGB} GB
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600 mt-0.5">
                     {formatNumber(volumeInfo.volume.totalBytes / 1024 / 1024 / 1024, 2)} GiB
                   </p>
                 </div>
-                <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-indigo-500/30 transition-all">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className="w-1 h-1 bg-yellow-400 rounded-full"></div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider">Used</span>
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-1.5 mb-1">
+                    <span className="text-xs text-gray-500">Used</span>
                   </div>
-                  <p className="text-lg font-bold bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">
+                  <p className="text-base font-semibold text-white">
                     {volumeInfo.volume.usedGB} GB
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600 mt-0.5">
                     {formatNumber(volumeInfo.volume.usedBytes / 1024 / 1024 / 1024, 2)} GiB
                   </p>
                 </div>
-                <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-indigo-500/30 transition-all">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className="w-1 h-1 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider">Available</span>
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-1.5 mb-1">
+                    <span className="text-xs text-gray-500">Available</span>
                   </div>
-                  <p className="text-lg font-bold bg-gradient-to-r from-white to-green-200 bg-clip-text text-transparent">
+                  <p className="text-base font-semibold text-white">
                     {volumeInfo.volume.availableGB} GB
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600 mt-0.5">
                     {formatNumber(volumeInfo.volume.availableBytes / 1024 / 1024 / 1024, 2)} GiB
                   </p>
                 </div>
-                <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-indigo-500/30 transition-all">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider">DB Size</span>
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-1.5 mb-1">
+                    <span className="text-xs text-gray-500">DB Size</span>
                   </div>
-                  <p className="text-lg font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                  <p className="text-base font-semibold text-white">
                     {volumeInfo.volume.databaseSizeMB} MB
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600 mt-0.5">
                     {formatNumber(volumeInfo.volume.databaseSize / 1024 / 1024, 2)} MiB
                   </p>
                 </div>
@@ -719,22 +729,21 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
         )}
 
         {/* Chart */}
-        <Card className="relative overflow-hidden glass-effect border-gray-800/50 animated-border">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
+        <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
           {chartFetching && !isFirstLoad && (
             <div className="absolute top-4 right-4 z-10">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
             </div>
           )}
-          <CardHeader className="pb-4 relative">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1">Performance Overview</CardTitle>
-                <CardDescription className="text-gray-500 text-xs">Daily profit/loss trends</CardDescription>
+                <CardTitle className="text-lg font-semibold text-white mb-1">Performance Overview</CardTitle>
+                <CardDescription className="text-sm text-gray-500">Daily profit/loss trends</CardDescription>
               </div>
               {formattedChartData.length > 0 && (
                 <div className="text-right">
-                  <p className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <p className="text-2xl font-bold text-white">
                     {formatSOL(formattedChartData.reduce((sum, d) => sum + d.net, 0))}
                   </p>
                   <p className="text-xs text-gray-500">Last 7 days</p>
@@ -813,22 +822,21 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Open Positions */}
-          <Card className="relative glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {positionsFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="relative">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-1">Open Positions</CardTitle>
-                  <CardDescription className="text-gray-500 text-xs">Currently held tokens</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-white mb-1">Open Positions</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Currently held tokens</CardDescription>
                 </div>
                 {positions && positions.length > 0 && (
-                  <div className="px-2 py-1 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full border border-purple-500/20">
-                    <span className="text-xs font-medium text-purple-400">{positions.length} active</span>
+                  <div className="px-2 py-1 bg-gray-800/50 rounded-full">
+                    <span className="text-xs font-medium text-gray-400">{positions.length} active</span>
                   </div>
                 )}
               </div>
@@ -839,8 +847,7 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
                   positions.slice(0, 5).map((position: Position, index: number) => (
                     <div 
                       key={position.token_address} 
-                      className="p-3 rounded-lg glass-effect border border-gray-800/50"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      className="p-3 rounded-lg bg-gray-800/50 border border-gray-800"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -880,22 +887,21 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
           </Card>
 
           {/* Recent Trades */}
-          <Card className="relative glass-effect border-gray-800/50 animated-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/5 to-transparent opacity-50"></div>
+          <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
             {tradesFetching && !isFirstLoad && (
               <div className="absolute top-4 right-4 z-10">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
               </div>
             )}
-            <CardHeader className="relative">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1">Recent Trades</CardTitle>
-                  <CardDescription className="text-gray-500 text-xs">Latest trading activity</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-white mb-1">Recent Trades</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Latest trading activity</CardDescription>
                 </div>
                 {trades?.trades && trades.trades.length > 0 && (
-                  <div className="px-2 py-1 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full border border-blue-500/20">
-                    <span className="text-xs font-medium text-blue-400">{trades.total} total</span>
+                  <div className="px-2 py-1 bg-gray-800/50 rounded-full">
+                    <span className="text-xs font-medium text-gray-400">{trades.total} total</span>
                   </div>
                 )}
               </div>
@@ -906,8 +912,7 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
                   trades.trades.slice(0, 5).map((trade: Trade, index: number) => (
                     <div 
                       key={trade.id} 
-                      className="p-3 rounded-lg glass-effect border border-gray-800/50"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      className="p-3 rounded-lg bg-gray-800/50 border border-gray-800"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -957,37 +962,35 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
         </div>
 
         {/* Wallet Signals */}
-        <Card className="relative glass-effect border-gray-800/50 animated-border">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/5 to-transparent opacity-50"></div>
+        <Card className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
           {signalsFetching && !isFirstLoad && (
             <div className="absolute top-4 right-4 z-10">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
             </div>
           )}
-          <CardHeader className="relative">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-1">Tracked Wallet Signals</CardTitle>
-                <CardDescription className="text-gray-500 text-xs">
+                <CardTitle className="text-lg font-semibold text-white mb-1">Tracked Wallet Signals</CardTitle>
+                <CardDescription className="text-sm text-gray-500">
                   Recent buy/sell activity from {walletSignals?.trackedWallet ? `${walletSignals.trackedWallet.slice(0, 6)}...${walletSignals.trackedWallet.slice(-4)}` : 'tracked wallet'}
                 </CardDescription>
               </div>
               {walletSignals?.count ? (
-                <div className="px-2 py-1 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-full border border-yellow-500/20">
-                  <span className="text-xs font-medium text-yellow-400">{walletSignals.count} signals</span>
+                <div className="px-2 py-1 bg-gray-800/50 rounded-full">
+                  <span className="text-xs font-medium text-gray-400">{walletSignals.count} signals</span>
                 </div>
               ) : null}
             </div>
           </CardHeader>
-          <CardContent className="relative">
+          <CardContent>
             <div className="relative max-h-[400px] overflow-y-auto scrollbar-custom">
               <div className="space-y-3 pr-3">
                 {walletSignals?.signals && walletSignals.signals.length > 0 ? (
                   walletSignals.signals.map((signal, index) => (
                     <div 
                       key={signal.fullSignature || signal.signature}
-                      className="p-3 rounded-lg glass-effect border border-gray-800/50 mr-1"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                      className="p-3 rounded-lg bg-gray-800/50 border border-gray-800 mr-1"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

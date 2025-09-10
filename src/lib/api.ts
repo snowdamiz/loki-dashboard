@@ -115,34 +115,64 @@ export interface ServiceHealth {
   details?: Record<string, any>
 }
 
-export interface HealthMetrics {
-  memoryUsage: {
-    rss: number
-    heapTotal: number
-    heapUsed: number
-    external: number
-    percentage: number
-  }
-  cpuUsage: {
-    user: number
-    system: number
-  }
-}
-
 export interface DetailedHealth {
   overall: 'healthy' | 'unhealthy' | 'degraded'
   timestamp: number
   uptime: number
   services: {
-    websocket?: ServiceHealth
-    solanaRpc?: ServiceHealth
-    database?: ServiceHealth
-    jupiterApi?: ServiceHealth
-    dexScreener?: ServiceHealth
-    monitoring?: ServiceHealth
-    [key: string]: ServiceHealth | undefined
+    websocket: ServiceHealth
+    solanaRpc: ServiceHealth
+    database: ServiceHealth
+    jupiterApi: ServiceHealth
+    dexScreener: ServiceHealth
+    monitoring: ServiceHealth
   }
-  metrics: HealthMetrics
+  metrics: {
+    memoryUsage: {
+      rss: number
+      heapTotal: number
+      heapUsed: number
+      external: number
+      percentage: number
+      arrayBuffers?: number
+    }
+    memoryDetails?: {
+      v8HeapStats: {
+        totalHeapSize: number
+        totalPhysicalSize: number
+        usedHeapSize: number
+        heapSizeLimit: number
+        availableSize: number
+      }
+      systemMemory?: {
+        total: number
+        free: number
+        used: number
+        usagePercent: number
+      }
+      health: {
+        status: string
+        message: string
+      }
+    }
+    applicationData?: {
+      walletMonitor: {
+        recentSignals: number
+      }
+      positionManager: {
+        openPositions: number
+      }
+      tradeProcessor: {
+        totalProcessed: number
+        successful: number
+        failed: number
+      }
+    }
+    cpuUsage?: {
+      user: number
+      system: number
+    }
+  }
 }
 
 export interface WalletSignal {
@@ -234,6 +264,9 @@ export const lokiApi = {
 
   // System
   getVolumeInfo: () => api.get<VolumeInfo>('/system/volume'),
+
+  // Database
+  clearDatabase: () => api.delete('/database/clear-all?confirm=yes-clear-all-data'),
 }
 
 export default lokiApi

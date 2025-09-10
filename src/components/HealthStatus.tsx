@@ -11,7 +11,11 @@ import {
   XCircle,
   Clock,
   Cpu,
-  HardDrive
+  HardDrive,
+  Server,
+  MemoryStick,
+  Gauge,
+  Package
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { formatNumber } from '../lib/utils'
@@ -23,41 +27,16 @@ interface HealthStatusProps {
   isFetching?: boolean
 }
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'healthy':
-      return <CheckCircle className="h-4 w-4 text-green-500" />
-    case 'unhealthy':
-      return <XCircle className="h-4 w-4 text-red-500" />
-    case 'degraded':
-      return <AlertCircle className="h-4 w-4 text-yellow-500" />
-    default:
-      return <AlertCircle className="h-4 w-4 text-gray-500" />
-  }
-}
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'healthy':
-      return 'text-green-400 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30'
-    case 'unhealthy':
-      return 'text-red-400 bg-gradient-to-br from-red-500/10 to-pink-500/10 border-red-500/30'
-    case 'degraded':
-      return 'text-yellow-400 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
-    default:
-      return 'text-gray-400 bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/30'
-  }
-}
 
 const getServiceIcon = (serviceName: string) => {
   const name = serviceName.toLowerCase()
-  if (name.includes('websocket')) return <Wifi className="h-5 w-5 text-purple-500" />
-  if (name.includes('database')) return <Database className="h-5 w-5 text-purple-500" />
-  if (name.includes('solana') || name.includes('rpc')) return <Globe className="h-5 w-5 text-purple-500" />
-  if (name.includes('jupiter')) return <Zap className="h-5 w-5 text-purple-500" />
-  if (name.includes('dex')) return <Activity className="h-5 w-5 text-purple-500" />
-  if (name.includes('monitor')) return <Monitor className="h-5 w-5 text-purple-500" />
-  return <Globe className="h-5 w-5 text-purple-500" />
+  if (name.includes('websocket')) return <Wifi className="h-3.5 w-3.5 text-gray-400" />
+  if (name.includes('database')) return <Database className="h-3.5 w-3.5 text-gray-400" />
+  if (name.includes('solana') || name.includes('rpc')) return <Globe className="h-3.5 w-3.5 text-gray-400" />
+  if (name.includes('jupiter')) return <Zap className="h-3.5 w-3.5 text-gray-400" />
+  if (name.includes('dex')) return <Activity className="h-3.5 w-3.5 text-gray-400" />
+  if (name.includes('monitor')) return <Monitor className="h-3.5 w-3.5 text-gray-400" />
+  return <Globe className="h-3.5 w-3.5 text-gray-400" />
 }
 
 const formatUptime = (seconds: number) => {
@@ -75,96 +54,77 @@ const formatBytes = (bytes: number) => {
   return `${mb.toFixed(1)} MB`
 }
 
+const formatMemory = (value: number, isGB: boolean = false) => {
+  if (isGB) {
+    // Value is already in GB
+    if (value < 1) {
+      return `${(value * 1024).toFixed(0)} MB`
+    }
+    return `${value.toFixed(2)} GB`
+  }
+  // Value is in bytes
+  return formatBytes(value)
+}
+
 const ServiceCard: React.FC<{ service: ServiceHealth; serviceName: string; isFetching?: boolean }> = ({ service, serviceName, isFetching }) => {
-  const statusColor = getStatusColor(service.status)
+  
+  // Determine primary metric to display
+  const getPrimaryMetric = () => {
+    if (service.latency !== undefined && service.latency > 0) {
+      return { value: `${service.latency}ms`, label: 'Latency' }
+    }
+    if (service.details?.slot) {
+      return { value: `${(service.details.slot / 1000).toFixed(0)}k`, label: 'Slot' }
+    }
+    if (service.details?.subscriptions !== undefined) {
+      return { value: service.details.subscriptions.toString(), label: 'Subs' }
+    }
+    return { value: service.status, label: 'Status' }
+  }
+
+  const primaryMetric = getPrimaryMetric()
   
   return (
-    <Card className="relative glass-effect border-gray-800/50 animated-border card-hover-lift group">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className="relative rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm">
       {isFetching && (
         <div className="absolute top-2 right-2 z-10">
-          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
+          <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
         </div>
       )}
-      <CardHeader className="pb-3 relative">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
-              {getServiceIcon(serviceName)}
-            </div>
-            <div>
-              <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">{service.name}</CardTitle>
-              {service.latency !== undefined && service.latency > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  <Clock className="inline h-3 w-3 mr-1" />
-                  {service.latency}ms
-                </p>
-              )}
-            </div>
-          </div>
-          <div className={`px-2 py-1 rounded-full flex items-center space-x-1 border ${statusColor}`}>
-            {getStatusIcon(service.status)}
-            <span className="text-xs font-medium capitalize">{service.status}</span>
+      
+      <div className="flex flex-col h-full">
+        {/* Header matching top cards */}
+        <div className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{service.name}</h3>
+          <div className="p-2 bg-gray-800/50 rounded-lg">
+            {getServiceIcon(serviceName)}
           </div>
         </div>
-      </CardHeader>
-      {service.details && Object.keys(service.details).length > 0 && (
-        <CardContent className="pt-0">
-          <div className="text-xs space-y-1">
-            {service.details.connected !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Connected:</span>
-                <span className={service.details.connected ? 'text-green-500' : 'text-red-500'}>
-                  {service.details.connected ? 'Yes' : 'No'}
-                </span>
-              </div>
-            )}
-            {service.details.endpoint && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Endpoint:</span>
-                <span className="text-gray-400 truncate max-w-[150px]" title={service.details.endpoint}>
-                  {service.details.endpoint.replace(/https?:\/\//, '').split('/')[0]}
-                </span>
-              </div>
-            )}
-            {service.details.slot && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Slot:</span>
-                <span className="text-gray-400">{service.details.slot.toLocaleString()}</span>
-              </div>
-            )}
-            {service.details.subscriptions !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Subscriptions:</span>
-                <span className="text-gray-400">{service.details.subscriptions}</span>
-              </div>
-            )}
-            {service.details.statusCode && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Status Code:</span>
-                <span className={service.details.statusCode === 200 ? 'text-green-500' : 'text-yellow-500'}>
-                  {service.details.statusCode}
-                </span>
-              </div>
-            )}
-            {service.details.cacheStatus && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Cache:</span>
-                <span className="text-gray-400 capitalize">{service.details.cacheStatus}</span>
-              </div>
-            )}
-            {service.details.dryRun !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Mode:</span>
-                <span className={service.details.dryRun ? 'text-yellow-500' : 'text-green-500'}>
-                  {service.details.dryRun ? 'Dry Run' : 'Live'}
-                </span>
-              </div>
-            )}
+        
+        {/* Content matching top cards */}
+        <div className="px-4 pb-4">
+          <div className="text-2xl font-bold text-white">
+            {primaryMetric.value}
           </div>
-        </CardContent>
-      )}
-    </Card>
+          <div className="flex items-center mt-2 space-x-2">
+            <div className={`w-1 h-1 rounded-full ${
+              service.status === 'healthy' ? 'bg-green-400 animate-pulse' :
+              service.status === 'unhealthy' ? 'bg-red-400' :
+              service.status === 'degraded' ? 'bg-yellow-400' :
+              'bg-gray-400'
+            }`} />
+            <p className="text-xs text-gray-500">
+              {primaryMetric.label}: <span className={`font-medium ${
+                service.status === 'healthy' ? 'text-green-400' :
+                service.status === 'unhealthy' ? 'text-red-400' :
+                service.status === 'degraded' ? 'text-yellow-400' :
+                'text-gray-400'
+              }`}>{service.status}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -184,89 +144,176 @@ export default function HealthStatus({ health, isLoading, isFetching }: HealthSt
     )
   }
 
-  const overallStatusColor = getStatusColor(health.overall)
-
   return (
     <div className="space-y-6">
-      {/* Overall Health Status */}
-      <Card className="relative glass-effect border-gray-800/50 animated-border card-hover-lift">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/5 to-transparent opacity-50"></div>
+      {/* Overall Health Status - Simplified */}
+      <div className="rounded-xl border border-gray-800 bg-gray-900/30 backdrop-blur-sm p-6">
         {isFetching && !isLoading && (
           <div className="absolute top-4 right-4 z-10">
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-ping"></div>
           </div>
         )}
-        <CardHeader className="relative">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl border border-purple-500/30">
-                <Activity className="h-6 w-6 text-purple-400" />
-              </div>
-              <div>
-                <CardTitle className="text-xs font-semibold text-purple-400 uppercase tracking-wider">System Health</CardTitle>
-                <CardDescription className="text-gray-500 text-xs">Overall system status and metrics</CardDescription>
-              </div>
-            </div>
-            <div className={`px-3 py-2 rounded-full flex items-center space-x-2 border ${overallStatusColor}`}>
-              {getStatusIcon(health.overall)}
-              <span className="text-sm font-medium capitalize">{health.overall}</span>
-            </div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-1">System Health</h2>
+            <p className="text-sm text-gray-500">Overall system status and performance metrics</p>
           </div>
-        </CardHeader>
-        <CardContent className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
-              <div className="flex items-center space-x-2 mb-1">
-                <Clock className="h-3 w-3 text-purple-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Uptime</span>
-              </div>
-              <p className="text-lg font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                {formatUptime(health.uptime)}
-              </p>
-            </div>
-            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
-              <div className="flex items-center space-x-2 mb-1">
-                <HardDrive className="h-3 w-3 text-purple-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Memory</span>
-              </div>
-              <p className="text-lg font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                {formatBytes(health.metrics.memoryUsage.heapUsed)}
-              </p>
-              <p className="text-xs text-gray-500">
-                {health.metrics.memoryUsage.percentage.toFixed(1)}% used
-              </p>
-            </div>
-            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
-              <div className="flex items-center space-x-2 mb-1">
-                <Cpu className="h-3 w-3 text-purple-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">CPU User</span>
-              </div>
-              <p className="text-lg font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                {(health.metrics.cpuUsage.user / 1000).toFixed(1)}s
-              </p>
-            </div>
-            <div className="glass-effect rounded-lg p-3 border border-gray-800/50 group hover:border-purple-500/30 transition-all">
-              <div className="flex items-center space-x-2 mb-1">
-                <Cpu className="h-3 w-3 text-purple-400" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">CPU System</span>
-              </div>
-              <p className="text-lg font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                {(health.metrics.cpuUsage.system / 1000).toFixed(1)}s
-              </p>
-            </div>
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${
+              health.overall === 'healthy' ? 'bg-green-500' :
+              health.overall === 'unhealthy' ? 'bg-red-500' :
+              health.overall === 'degraded' ? 'bg-yellow-500' :
+              'bg-gray-500'
+            } ${health.overall === 'healthy' ? 'animate-pulse' : ''}`} />
+            <span className="text-sm font-medium text-gray-300 capitalize">{health.overall}</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        
+        {/* Basic Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <div className="flex items-center space-x-1.5 mb-1">
+              <Clock className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-xs text-gray-500">Uptime</span>
+            </div>
+            <p className="text-base font-semibold text-white">
+              {formatUptime(health.uptime)}
+            </p>
+          </div>
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <div className="flex items-center space-x-1.5 mb-1">
+              <HardDrive className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-xs text-gray-500">Heap Memory</span>
+            </div>
+            <p className="text-base font-semibold text-white">
+              {formatBytes(health.metrics.memoryUsage.heapUsed)}
+            </p>
+            <p className="text-xs text-gray-600 mt-0.5">
+              {health.metrics.memoryUsage.percentage.toFixed(1)}% used
+            </p>
+          </div>
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <div className="flex items-center space-x-1.5 mb-1">
+              <Cpu className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-xs text-gray-500">CPU User</span>
+            </div>
+            <p className="text-base font-semibold text-white">
+              {health.metrics.cpuUsage ? `${(health.metrics.cpuUsage.user / 1000000).toFixed(2)}s` : 'N/A'}
+            </p>
+          </div>
+          <div className="bg-gray-800/50 rounded-lg p-3">
+            <div className="flex items-center space-x-1.5 mb-1">
+              <Cpu className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-xs text-gray-500">CPU System</span>
+            </div>
+            <p className="text-base font-semibold text-white">
+              {health.metrics.cpuUsage ? `${(health.metrics.cpuUsage.system / 1000000).toFixed(2)}s` : 'N/A'}
+            </p>
+          </div>
+        </div>
 
-      {/* Service Status Grid */}
+        {/* Detailed Memory Information */}
+        {health.metrics.memoryDetails && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Memory Details</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <MemoryStick className="h-3.5 w-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-500">V8 Heap</span>
+                </div>
+                <p className="text-base font-semibold text-white">
+                  {formatBytes(health.metrics.memoryDetails.v8HeapStats.usedHeapSize)}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  of {formatBytes(health.metrics.memoryDetails.v8HeapStats.heapSizeLimit)}
+                </p>
+              </div>
+              {health.metrics.memoryDetails.systemMemory && (
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="flex items-center space-x-1.5 mb-1">
+                    <Server className="h-3.5 w-3.5 text-gray-500" />
+                    <span className="text-xs text-gray-500">System Memory</span>
+                  </div>
+                  <p className="text-base font-semibold text-white">
+                    {formatMemory(health.metrics.memoryDetails.systemMemory.used, true)}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    {health.metrics.memoryDetails.systemMemory.usagePercent.toFixed(1)}% of {formatMemory(health.metrics.memoryDetails.systemMemory.total, true)}
+                  </p>
+                </div>
+              )}
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <Gauge className="h-3.5 w-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-500">Memory Health</span>
+                </div>
+                <p className={`text-base font-semibold ${
+                  health.metrics.memoryDetails.health.status === 'healthy' ? 'text-green-400' :
+                  health.metrics.memoryDetails.health.status === 'warning' ? 'text-yellow-400' :
+                  'text-red-400'
+                }`}>
+                  {health.metrics.memoryDetails.health.status}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  {health.metrics.memoryDetails.health.message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Application Data */}
+        {health.metrics.applicationData && (
+          <div className="space-y-3 mt-4">
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">Application Metrics</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <Activity className="h-3.5 w-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-500">Wallet Monitor</span>
+                </div>
+                <p className="text-base font-semibold text-white">
+                  {health.metrics.applicationData.walletMonitor.recentSignals || 0}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">Recent signals</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <Package className="h-3.5 w-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-500">Position Manager</span>
+                </div>
+                <p className="text-base font-semibold text-white">
+                  {health.metrics.applicationData.positionManager.openPositions}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">Open positions</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <Zap className="h-3.5 w-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-500">Trade Processor</span>
+                </div>
+                <p className="text-base font-semibold text-white">
+                  {health.metrics.applicationData.tradeProcessor.successful}/{health.metrics.applicationData.tradeProcessor.totalProcessed}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Success rate: {health.metrics.applicationData.tradeProcessor.totalProcessed > 0 
+                    ? `${((health.metrics.applicationData.tradeProcessor.successful / health.metrics.applicationData.tradeProcessor.totalProcessed) * 100).toFixed(1)}%`
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Service Status Grid - Cleaner */}
       <div>
-        <h3 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-4">Service Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(health.services).map(([key, service]) => 
-            service ? (
-              <ServiceCard key={key} service={service} serviceName={key} isFetching={isFetching && !isLoading} />
-            ) : null
-          )}
+        <h3 className="text-sm font-medium text-gray-400 mb-4">Service Status</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Object.entries(health.services).map(([key, service]) => (
+            <ServiceCard key={key} service={service} serviceName={key} isFetching={isFetching && !isLoading} />
+          ))}
         </div>
       </div>
     </div>
