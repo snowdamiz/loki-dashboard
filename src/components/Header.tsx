@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   X,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react'
 import { Button } from './ui/button'
 import lokiApi from '../lib/api'
@@ -31,6 +32,8 @@ export default function Header({
 }: HeaderProps) {
   const queryClient = useQueryClient()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [downloadHours, setDownloadHours] = useState<number>(24)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Mutations
   const pauseMutation = useMutation({
@@ -47,6 +50,33 @@ export default function Header({
     mutationFn: lokiApi.emergencyStop,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
   })
+
+  // Download database handler
+  const handleDownloadDatabase = async () => {
+    try {
+      setIsDownloading(true)
+      const response = await lokiApi.downloadDatabase(downloadHours)
+      
+      // Create blob from response (zip file)
+      const blob = new Blob([response.data], { type: 'application/zip' })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `loki-data-${downloadHours}h-${new Date().toISOString().split('T')[0]}.zip`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download database:', error)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/5">
@@ -137,6 +167,34 @@ export default function Header({
               </button>
               <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-900 border border-gray-800 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right scale-95 group-hover:scale-100">
                 <div className="p-1">
+                  <div className="px-3 py-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-400">Download DB</span>
+                      <select
+                        value={downloadHours}
+                        onChange={(e) => setDownloadHours(Number(e.target.value))}
+                        className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-purple-500"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value={1}>1 hour</option>
+                        <option value={6}>6 hours</option>
+                        <option value={12}>12 hours</option>
+                        <option value={24}>24 hours</option>
+                        <option value={48}>48 hours</option>
+                        <option value={72}>72 hours</option>
+                        <option value={168}>1 week</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={handleDownloadDatabase}
+                      disabled={isDownloading}
+                      className="w-full flex items-center justify-center space-x-2 px-2 py-1.5 text-xs rounded-md bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
+                    </button>
+                  </div>
+                  <div className="h-px bg-gray-800 my-1" />
                   <button
                     onClick={onClearDatabase}
                     className="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-md hover:bg-orange-600/10 text-orange-400 hover:text-orange-300 transition-colors"
@@ -259,9 +317,42 @@ export default function Header({
                 )}
               </div>
 
-              {/* Danger Zone */}
+              {/* Database Actions */}
               <div className="pt-2 mt-2 border-t border-gray-800">
-                <p className="text-xs text-gray-500 mb-2 px-1">Danger Zone</p>
+                <p className="text-xs text-gray-500 mb-2 px-1">Database</p>
+                
+                {/* Download Database */}
+                <div className="mb-2">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-xs text-gray-400">Download Database</span>
+                    <select
+                      value={downloadHours}
+                      onChange={(e) => setDownloadHours(Number(e.target.value))}
+                      className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value={1}>1 hour</option>
+                      <option value={6}>6 hours</option>
+                      <option value={12}>12 hours</option>
+                      <option value={24}>24 hours</option>
+                      <option value={48}>48 hours</option>
+                      <option value={72}>72 hours</option>
+                      <option value={168}>1 week</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleDownloadDatabase()
+                      setMobileMenuOpen(false)
+                    }}
+                    disabled={isDownloading}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-purple-600/10 border border-purple-600/20 hover:bg-purple-600/20 text-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="text-sm font-medium">{isDownloading ? 'Downloading...' : 'Download'}</span>
+                  </button>
+                </div>
+                
+                {/* Clear Database */}
                 <button
                   onClick={() => {
                     onClearDatabase()

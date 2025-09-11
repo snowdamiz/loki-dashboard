@@ -267,6 +267,16 @@ export const lokiApi = {
 
   // Database
   clearDatabase: () => api.delete('/database/clear-all?confirm=yes-clear-all-data'),
+  downloadDatabase: (hours?: number) => {
+    const params = hours ? { hours } : {}
+    return api.get('/database/download', { 
+      params,
+      responseType: 'blob',
+      headers: {
+        'Accept': 'application/zip'
+      }
+    })
+  },
 }
 
 export default lokiApi
