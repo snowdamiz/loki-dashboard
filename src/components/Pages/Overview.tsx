@@ -150,8 +150,13 @@ export default function Overview({
                       <p className="text-sm font-semibold text-gray-300">
                         {formatNumber(trade.amount_sol, 4)} SOL
                       </p>
+                      {trade.token_amount > 0 && (
+                        <p className="text-xs text-gray-500">
+                          {formatNumber(trade.token_amount, 2)} tokens
+                        </p>
+                      )}
                       {trade.status === 'FAILED' && (
-                        <p className="text-xs text-red-400">Failed</p>
+                        <p className="text-xs text-red-400 mt-1">Failed</p>
                       )}
                     </div>
                   </div>
