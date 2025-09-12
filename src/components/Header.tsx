@@ -1,82 +1,28 @@
 import React, { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   Activity, 
-  Play,
-  Pause,
-  StopCircle,
   RefreshCw,
   LogOut,
   Menu,
-  X,
-  Trash2,
-  Download
+  X
 } from 'lucide-react'
 import { Button } from './ui/button'
-import lokiApi from '../lib/api'
 
 interface HeaderProps {
   status: any
   autoRefresh: boolean
   setAutoRefresh: (value: boolean) => void
   onLogout?: () => void
-  onClearDatabase: () => void
 }
 
 export default function Header({ 
   status, 
   autoRefresh, 
   setAutoRefresh, 
-  onLogout, 
-  onClearDatabase 
+  onLogout
 }: HeaderProps) {
-  const queryClient = useQueryClient()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [downloadHours, setDownloadHours] = useState<number>(24)
-  const [isDownloading, setIsDownloading] = useState(false)
 
-  // Mutations
-  const pauseMutation = useMutation({
-    mutationFn: lokiApi.pause,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
-  })
-
-  const resumeMutation = useMutation({
-    mutationFn: lokiApi.resume,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
-  })
-
-  const emergencyStopMutation = useMutation({
-    mutationFn: lokiApi.emergencyStop,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
-  })
-
-  // Download database handler
-  const handleDownloadDatabase = async () => {
-    try {
-      setIsDownloading(true)
-      const response = await lokiApi.downloadDatabase(downloadHours)
-      
-      // Create blob from response (zip file)
-      const blob = new Blob([response.data], { type: 'application/zip' })
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `loki-data-${downloadHours}h-${new Date().toISOString().split('T')[0]}.zip`
-      document.body.appendChild(link)
-      link.click()
-      
-      // Cleanup
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Failed to download database:', error)
-    } finally {
-      setIsDownloading(false)
-    }
-  }
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/40 border-b border-white/5">
@@ -101,7 +47,7 @@ export default function Header({
             </div>
           </div>
 
-          {/* Desktop Controls - Redesigned */}
+          {/* Desktop Controls - Simplified */}
           <div className="hidden lg:flex items-center space-x-2">
             {/* Live Updates Toggle */}
             <button
@@ -124,99 +70,17 @@ export default function Header({
               </div>
             </button>
 
-            {/* Trading Controls Group */}
-            <div className="flex items-center bg-gray-900/50 rounded-lg p-1 border border-gray-800">
-              {status?.bot?.paused ? (
-                <Button
-                  size="sm"
-                  onClick={() => resumeMutation.mutate()}
-                  disabled={resumeMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 h-auto rounded-md"
-                >
-                  <Play className="h-3.5 w-3.5 mr-1.5" />
-                  Resume
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => pauseMutation.mutate()}
-                  disabled={pauseMutation.isPending}
-                  className="bg-gray-800 hover:bg-yellow-600/20 text-yellow-500 hover:text-yellow-400 text-xs px-3 py-1.5 h-auto rounded-md border-0"
-                >
-                  <Pause className="h-3.5 w-3.5 mr-1.5" />
-                  Pause
-                </Button>
-              )}
-              <div className="w-px h-6 bg-gray-700 mx-1" />
+            {/* Logout Button */}
+            {onLogout && (
               <Button
                 size="sm"
-                onClick={() => emergencyStopMutation.mutate()}
-                disabled={emergencyStopMutation.isPending}
-                className="bg-transparent hover:bg-red-600/20 text-red-500 hover:text-red-400 text-xs px-3 py-1.5 h-auto rounded-md border-0"
+                onClick={onLogout}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs px-3 py-1.5 h-auto rounded-md border border-gray-700"
               >
-                <StopCircle className="h-3.5 w-3.5 mr-1.5" />
-                Stop
+                <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                Logout
               </Button>
-            </div>
-
-            {/* Actions Dropdown Menu */}
-            <div className="relative group">
-              <button className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-medium transition-all border border-gray-700">
-                <Menu className="h-3.5 w-3.5" />
-                <span>Actions</span>
-              </button>
-              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-900 border border-gray-800 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right scale-95 group-hover:scale-100">
-                <div className="p-1">
-                  <div className="px-3 py-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-400">Download DB</span>
-                      <select
-                        value={downloadHours}
-                        onChange={(e) => setDownloadHours(Number(e.target.value))}
-                        className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-purple-500"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value={1}>1 hour</option>
-                        <option value={6}>6 hours</option>
-                        <option value={12}>12 hours</option>
-                        <option value={24}>24 hours</option>
-                        <option value={48}>48 hours</option>
-                        <option value={72}>72 hours</option>
-                        <option value={168}>1 week</option>
-                      </select>
-                    </div>
-                    <button
-                      onClick={handleDownloadDatabase}
-                      disabled={isDownloading}
-                      className="w-full flex items-center justify-center space-x-2 px-2 py-1.5 text-xs rounded-md bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
-                    </button>
-                  </div>
-                  <div className="h-px bg-gray-800 my-1" />
-                  <button
-                    onClick={onClearDatabase}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-md hover:bg-orange-600/10 text-orange-400 hover:text-orange-300 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Clear Database</span>
-                  </button>
-                  {onLogout && (
-                    <>
-                      <div className="h-px bg-gray-800 my-1" />
-                      <button
-                        onClick={onLogout}
-                        className="w-full flex items-center space-x-2 px-3 py-2 text-xs rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-                      >
-                        <LogOut className="h-3.5 w-3.5" />
-                        <span>Logout</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Mobile Menu Button - Redesigned */}
@@ -245,17 +109,19 @@ export default function Header({
         </div>
       </div>
 
-      {/* Mobile Menu - Redesigned Slide Down */}
+      {/* Mobile Menu - Simplified */}
       <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-        mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        mobileMenuOpen ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="border-t border-gray-800/50 bg-black/60 backdrop-blur-xl">
           <div className="container mx-auto px-4 py-4">
-            {/* Mobile Controls - Simplified Color Scheme */}
             <div className="space-y-2">
               {/* Live Updates Toggle */}
               <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
+                onClick={() => {
+                  setAutoRefresh(!autoRefresh)
+                  setMobileMenuOpen(false)
+                }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                   autoRefresh 
                     ? 'bg-gray-800 text-white border border-gray-700' 
@@ -274,96 +140,6 @@ export default function Header({
                   {autoRefresh ? 'ON' : 'OFF'}
                 </span>
               </button>
-
-              {/* Trading Control */}
-              <div className="grid grid-cols-2 gap-2">
-                {status?.bot?.paused ? (
-                  <Button
-                    onClick={() => {
-                      resumeMutation.mutate()
-                      setMobileMenuOpen(false)
-                    }}
-                    disabled={resumeMutation.isPending}
-                    className="col-span-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Resume Trading
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => {
-                      pauseMutation.mutate()
-                      setMobileMenuOpen(false)
-                    }}
-                    disabled={pauseMutation.isPending}
-                    className="bg-gray-900/50 border-gray-700 hover:bg-gray-800 text-gray-300"
-                  >
-                    <Pause className="h-4 w-4 mr-2" />
-                    Pause
-                  </Button>
-                )}
-                {!status?.bot?.paused && (
-                  <Button
-                    onClick={() => {
-                      emergencyStopMutation.mutate()
-                      setMobileMenuOpen(false)
-                    }}
-                    disabled={emergencyStopMutation.isPending}
-                    className="bg-gray-900/50 border-gray-700 hover:bg-gray-800 text-gray-300"
-                  >
-                    <StopCircle className="h-4 w-4 mr-2" />
-                    Stop
-                  </Button>
-                )}
-              </div>
-
-              {/* Database Actions */}
-              <div className="pt-2 mt-2 border-t border-gray-800">
-                <p className="text-xs text-gray-500 mb-2 px-1">Database</p>
-                
-                {/* Download Database */}
-                <div className="mb-2">
-                  <div className="flex items-center justify-between mb-2 px-1">
-                    <span className="text-xs text-gray-400">Download Database</span>
-                    <select
-                      value={downloadHours}
-                      onChange={(e) => setDownloadHours(Number(e.target.value))}
-                      className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-purple-500"
-                    >
-                      <option value={1}>1 hour</option>
-                      <option value={6}>6 hours</option>
-                      <option value={12}>12 hours</option>
-                      <option value={24}>24 hours</option>
-                      <option value={48}>48 hours</option>
-                      <option value={72}>72 hours</option>
-                      <option value={168}>1 week</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => {
-                      handleDownloadDatabase()
-                      setMobileMenuOpen(false)
-                    }}
-                    disabled={isDownloading}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-purple-600/10 border border-purple-600/20 hover:bg-purple-600/20 text-purple-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="text-sm font-medium">{isDownloading ? 'Downloading...' : 'Download'}</span>
-                  </button>
-                </div>
-                
-                {/* Clear Database */}
-                <button
-                  onClick={() => {
-                    onClearDatabase()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg bg-gray-900/50 border border-gray-700 hover:bg-gray-800 text-gray-300 transition-all"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Clear Database</span>
-                </button>
-              </div>
 
               {/* Logout */}
               {onLogout && (

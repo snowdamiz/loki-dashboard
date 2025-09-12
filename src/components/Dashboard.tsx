@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import lokiApi, { type Position } from '../lib/api'
-import HealthStatus from './HealthStatus'
 import Header from './Header'
 import ClearDatabaseDialog from './ClearDatabaseDialog'
-import StatsCards from './StatsCards'
-import VolumeCard from './VolumeCard'
-import PerformanceChart from './PerformanceChart'
-import OpenPositions from './OpenPositions'
-import RecentTrades from './RecentTrades'
-import WalletSignals from './WalletSignals'
+import TabNav, { type TabType } from './Navigation/TabNav'
+import MobileNav from './Navigation/MobileNav'
+import Overview from './Pages/Overview'
+import Trading from './Pages/Trading'
+import Positions from './Pages/Positions'
+import System from './Pages/System'
 
 interface DashboardProps {
   onLogout?: () => void
@@ -19,6 +18,10 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
+  const [isDownloading, setIsDownloading] = useState(false)
+  
+  const queryClient = useQueryClient()
 
   // Queries with staleTime to prevent unnecessary refetches
   const { data: status = {} as any, isLoading: statusLoading, isFetching: statusFetching, isSuccess: statusSuccess } = useQuery({
@@ -109,6 +112,49 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
     staleTime: 25000,
   })
 
+  // Mutations for bot control
+  const pauseMutation = useMutation({
+    mutationFn: lokiApi.pause,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
+  })
+
+  const resumeMutation = useMutation({
+    mutationFn: lokiApi.resume,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
+  })
+
+  const emergencyStopMutation = useMutation({
+    mutationFn: lokiApi.emergencyStop,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['status'] })
+  })
+
+  // Download database handler
+  const handleDownloadDatabase = async (hours: number) => {
+    try {
+      setIsDownloading(true)
+      const response = await lokiApi.downloadDatabase(hours)
+      
+      // Create blob from response
+      const blob = new Blob([response.data], { type: 'application/zip' })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `loki-data-${hours}h-${new Date().toISOString().split('T')[0]}.zip`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download database:', error)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   // Only show spinner on the very first load ever
   if (isFirstLoad && statusLoading && !status?.bot) {
     return (
@@ -135,61 +181,72 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
         autoRefresh={autoRefresh}
         setAutoRefresh={setAutoRefresh}
         onLogout={onLogout}
-        onClearDatabase={() => setShowClearConfirm(true)}
       />
 
+      {/* Tab Navigation */}
+      <div className="container mx-auto px-4 py-2">
+        <TabNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+        />
+        <MobileNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+        />
+      </div>
+
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 lg:space-y-8">
-        {/* Stats Cards */}
-        <StatsCards 
-          status={status}
-          metrics={metrics}
-          positions={positions}
-          statusFetching={statusFetching}
-          metricsFetching={metricsFetching}
-          positionsFetching={positionsFetching}
-          isFirstLoad={isFirstLoad}
-        />
-
-        {/* Health Status Panel */}
-        <HealthStatus health={detailedHealth} isLoading={healthLoading} isFetching={healthFetching && !isFirstLoad} />
-
-        {/* DB Volume Card */}
-        <VolumeCard 
-          volumeInfo={volumeInfo}
-          volumeFetching={volumeFetching}
-          isFirstLoad={isFirstLoad}
-        />
-
-        {/* Performance Chart */}
-        <PerformanceChart 
-          chartData={chartData}
-          chartFetching={chartFetching}
-          isFirstLoad={isFirstLoad}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Open Positions */}
-          <OpenPositions 
+      <main className="container mx-auto px-4 py-2 sm:py-4 lg:py-6 pb-20 lg:pb-8">
+        {activeTab === 'overview' && (
+          <Overview
+            status={status}
+            metrics={metrics}
             positions={positions}
-            positionsFetching={positionsFetching}
-            isFirstLoad={isFirstLoad}
-          />
-
-          {/* Recent Trades */}
-          <RecentTrades 
             trades={trades}
+            statusFetching={statusFetching}
+            metricsFetching={metricsFetching}
+            positionsFetching={positionsFetching}
             tradesFetching={tradesFetching}
-            isFirstLoad={isFirstLoad}
+            onPause={() => pauseMutation.mutate()}
+            onResume={() => resumeMutation.mutate()}
+            onEmergencyStop={() => emergencyStopMutation.mutate()}
+            isPausing={pauseMutation.isPending}
+            isResuming={resumeMutation.isPending}
+            isStopping={emergencyStopMutation.isPending}
           />
-        </div>
-
-        {/* Wallet Signals */}
-        <WalletSignals 
-          walletSignals={walletSignals}
-          signalsFetching={signalsFetching}
-          isFirstLoad={isFirstLoad}
-        />
+        )}
+        
+        {activeTab === 'trading' && (
+          <Trading
+            chartData={chartData}
+            trades={trades}
+            metrics={metrics}
+            chartFetching={chartFetching}
+            tradesFetching={tradesFetching}
+            metricsFetching={metricsFetching}
+          />
+        )}
+        
+        {activeTab === 'positions' && (
+          <Positions
+            positions={positions}
+            walletSignals={walletSignals}
+            positionsFetching={positionsFetching}
+            signalsFetching={signalsFetching}
+          />
+        )}
+        
+        {activeTab === 'system' && (
+          <System
+            detailedHealth={detailedHealth}
+            volumeInfo={volumeInfo}
+            healthFetching={healthFetching}
+            volumeFetching={volumeFetching}
+            onClearDatabase={() => setShowClearConfirm(true)}
+            onDownloadDatabase={handleDownloadDatabase}
+            isDownloading={isDownloading}
+          />
+        )}
       </main>
     </div>
   )
