@@ -20,6 +20,12 @@ export default function Positions({
   positionsFetching,
   signalsFetching
 }: PositionsProps) {
+  // Callback to refresh positions after closing
+  const handlePositionClosed = () => {
+    // This will trigger a refresh in the parent component
+    // The parent should handle the actual refresh logic
+    window.dispatchEvent(new CustomEvent('positionClosed'))
+  }
   // Calculate portfolio analytics
   const totalValue = positions?.reduce((sum, p) => sum + (p.currentValue || 0), 0) || 0
   const totalCost = positions?.reduce((sum, p) => sum + (p.entryValue || p.cost_basis || 0), 0) || 0
@@ -143,6 +149,7 @@ export default function Positions({
           positions={positions}
           positionsFetching={positionsFetching}
           isFirstLoad={false}
+          onPositionClosed={handlePositionClosed}
         />
       </div>
 

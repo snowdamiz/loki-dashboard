@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Dashboard from './components/Dashboard'
 import Login from './components/Login'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ToastContainer } from './components/ui/use-toast'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <AuthenticatedApp />
+        <ToastContainer />
       </QueryClientProvider>
     </AuthProvider>
   )

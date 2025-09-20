@@ -41,6 +41,18 @@ export default function Dashboard({ onLogout }: DashboardProps = {}) {
     }
   }, [statusSuccess, isFirstLoad])
 
+  // Listen for position closed events
+  useEffect(() => {
+    const handlePositionClosed = () => {
+      queryClient.invalidateQueries({ queryKey: ['positions'] })
+      queryClient.invalidateQueries({ queryKey: ['status'] })
+      queryClient.invalidateQueries({ queryKey: ['metrics'] })
+    }
+
+    window.addEventListener('positionClosed', handlePositionClosed)
+    return () => window.removeEventListener('positionClosed', handlePositionClosed)
+  }, [queryClient])
+
   const { data: trades = {} as any, isLoading: tradesLoading, isFetching: tradesFetching } = useQuery({
     queryKey: ['trades'],
     queryFn: async () => {

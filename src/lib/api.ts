@@ -246,6 +246,8 @@ export const lokiApi = {
   clearQueue: () => api.post('/control/clear-queue'),
   updateConfig: (path: string, value: any) => 
     api.post('/control/config', { path, value }),
+  closePosition: (token: string, reason?: string) =>
+    api.post(`/control/positions/${token}/close`, { reason: reason || 'Manual close via dashboard' }),
 
   // Wallet
   getWalletBalance: () => api.get('/wallet/balance'),

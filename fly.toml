@@ -10,12 +10,7 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [build]
-  # Uses local Dockerfile when deploying from this directory
-  # For monorepo deployment, use: dockerfile = "../loki/Dockerfile.dashboard"
   dockerfile = "Dockerfile"
-  [build.args]
-    VITE_AUTH_EMAIL = "yurlovandrew@gmail.com"
-    VITE_AUTH_PASSWORD = "Sn0wd@miz120356"
 
 [env]
   PORT = "80"
@@ -52,12 +47,3 @@ kill_timeout = "5s"
   memory = "256mb"
   cpu_kind = "shared"
   cpus = 1
-
-# Optional: Add these sections if needed
-# [mounts]
-#   source = "data"
-#   destination = "/data"
-
-# [metrics]
-#   port = 9091
-#   path = "/metrics"
